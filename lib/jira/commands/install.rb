@@ -5,23 +5,6 @@ module Jira
     def install
       Command::Install.new.run
     end
-
-    no_tasks do
-      def try_install_cookie
-        return false if Jira::Core.cookie.empty?
-        puts "  ... cookie expired, renewing your cookie"
-        Command::Install.new.run_rescue_cookie
-        puts "Cookie renewed, updating .jira-rescue-cookie"
-        File.open(Jira::Core.rescue_cookie_path, "a") do |f|
-          f << "r"
-        end
-        puts "  ... updated .jira-rescue-cookie"
-        return true
-      rescue Interrupt, StandardError
-        false
-      end
-    end
-
   end
 
   module Command
@@ -30,30 +13,14 @@ module Jira
       def run
         io.say('Please enter your JIRA information.')
         inifile[:global] = base_params
-        inifile.write # Do this now because cookie authentication uses api calls
 
-        inifile.delete_section("cookie") if inifile.has_section?("cookie")
         case authentication
         when "basic"
-          inifile[:global][:password] = password
+          puts "To skip password entry when using jira-cli, set the JIRA_PASSWORD env var"
         when "token"
           inifile[:global][:token] = token
-        when "cookie"
-          response = cookie(session_params)
-          inifile[:cookie] = {}
-          inifile[:cookie][:name] = response['name']
-          inifile[:cookie][:value] = response['value']
         end
         inifile.write
-      end
-
-      def run_rescue_cookie
-        response = cookie(rescue_cookie_params)
-        config = Jira::Core.config
-        config[:cookie] = {}
-        config[:cookie][:name] = response['name']
-        config[:cookie][:value] = response['value']
-        config.write
       end
 
     private
@@ -62,13 +29,6 @@ module Jira
         {
           url:      url,
           username: username
-        }
-      end
-
-      def rescue_cookie_params
-        {
-          username: Jira::Core.username,
-          password: password
         }
       end
 
@@ -82,7 +42,7 @@ module Jira
       def authentication
         @authentication ||= io.select(
           "Select an authentication type:",
-          ["basic", "cookie", "token"]
+          ["basic", "token"]
         )
       end
 
@@ -95,17 +55,11 @@ module Jira
       end
 
       def password
-        io.mask("JIRA password:")
+        Jira::Core.password
       end
 
       def token
         io.ask("JIRA token:")
-      end
-
-      def cookie(params)
-        response = auth_api.post('session', params: params)
-        return {} unless response['errorMessages'].nil?
-        response['session']
       end
 
       def inifile

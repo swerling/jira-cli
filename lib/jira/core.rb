@@ -19,8 +19,15 @@ module Jira
       #
       # @return [String] JIRA password
       #
-      def password
-        @password ||= ENV['JIRA_PASSWORD'] || config[:global]['password']
+      def password(site_url = nil)
+        @password ||= begin
+          if(pwd = ENV['JIRA_PASSWORD']).nil?
+            puts "\n\tTo skip password entry for jira-cli, define env var JIRA_PASSWORD.\n\n"
+            TTY::Prompt.new.mask("Please enter your password for #{self.username}@#{site_url || self.url}:")
+          else
+            pwd
+          end
+        end
       end
 
       #
