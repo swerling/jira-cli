@@ -1,3 +1,5 @@
+require 'fileutils'
+
 module Jira
   class CLI < Thor
 
@@ -11,16 +13,25 @@ module Jira
     class Install < Base
 
       def run
+        io.say <<-XXX
+          jira-cli will store your jira info in #{Jira::Core.cli_path}.
+
+          The directory will have limited access (0700).
+
+          The config file will also have limited access (0600).
+
+        XXX
         io.say('Please enter your JIRA information.')
         inifile[:global] = base_params
 
         case authentication
         when "basic"
-          puts "To skip password entry when using jira-cli, set the JIRA_PASSWORD env var"
+          inifile[:global][:password] = password
         when "token"
           inifile[:global][:token] = token
         end
-        inifile.write
+
+        save_ini_file
       end
 
     private
@@ -55,7 +66,17 @@ module Jira
       end
 
       def password
-        Jira::Core.password
+        io.say <<-SAY
+          Your password will be stored in plain text in #{Jira::Core.cli_path}".
+
+          The config file and its parent directory are given restricted
+          access only when created by jira-cli.
+
+          Skip the password entry if you prefer to store the password in
+          an env var called JIRA_PASSWORD, or if you prefer to enter your
+          password each time you run a jira-cli command.
+        SAY
+        io.mask("JIRA password:")
       end
 
       def token
@@ -68,6 +89,19 @@ module Jira
           encoding: 'UTF-8',
           filename: Jira::Core.cli_path
         )
+      end
+
+      # save ini file, restricting access to the dir and the config file
+      def save_ini_file
+        fn = Jira::Core.cli_path
+
+        dir = File.dirname(fn)
+        if !File.exist?(dir)
+          FileUtils.mkdir(dir)
+          FileUtils.chmod(0700, dir)
+        end
+        inifile.write
+        FileUtils.chmod(0600, fn)
       end
 
     end

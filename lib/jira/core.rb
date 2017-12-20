@@ -21,8 +21,9 @@ module Jira
       #
       def password(site_url = nil)
         @password ||= begin
-          if(pwd = ENV['JIRA_PASSWORD']).nil?
-            puts "\n\tTo skip password entry for jira-cli, define env var JIRA_PASSWORD.\n\n"
+          pwd = ENV['JIRA_PASSWORD'] || config[:global]['password']
+          if pwd.nil?
+            puts "\n\tTo skip password entry for jira-cli, define env var JIRA_PASSWORD, or rerun 'jira install'.\n\n"
             TTY::Prompt.new.mask("Please enter your password for #{self.username}@#{site_url || self.url}:")
           else
             pwd
@@ -35,14 +36,6 @@ module Jira
       #
       def token
         @token ||= ENV['JIRA_TOKEN'] || config[:global]['token']
-      end
-
-      #
-      # @return [Hash] JIRA cookie
-      #
-      def cookie
-        return {} if config[:cookie].nil? || config[:cookie].empty?
-        { name: config[:cookie]['name'], value: config[:cookie]['value'] }
       end
 
       #
@@ -69,19 +62,14 @@ module Jira
       # @return [String] path to .jira-cli file
       #
       def cli_path
-        @cli_path ||= "#{Dir.home}/.jira-cli"
-      end
-
-      #
-      # @return [String] path to .jira-rescue-cookie file
-      #
-      def rescue_cookie_path
-        @rescue_cookie_path ||= "#{Dir.home}/.jira-rescue-cookie"
+        @cli_path ||= "#{Dir.home}/.jira-cli/config"
       end
 
       def config
         @config ||= (
-          raise InstallationException unless File.exist?(cli_path)
+          unless File.exist?(cli_path)
+            raise InstallationException.new("Could not find #{cli_path}")
+          end
           IniFile.load(cli_path, comment: '#', encoding: 'UTF-8')
         )
       end

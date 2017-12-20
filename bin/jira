@@ -3,22 +3,17 @@
 require 'jira'
 begin
   Jira::CLI.start
-  File.delete(Jira::Core.rescue_cookie_path) if File.exist?(Jira::Core.rescue_cookie_path)
 rescue Faraday::Error, UnauthorizedException
-  if Jira::CLI.new.try_install_cookie
-    if File.read(Jira::Core.rescue_cookie_path).count('r') < 3
-      puts "Re-running: jira #{ARGV.join(' ')}"
-      Process.waitpid(
-        Process.fork do
-          Process.exec("jira #{ARGV.join(' ')}")
-        end
-      )
-      exit
-    end
-  end
-  puts "JIRA failed connect, you may need to rerun 'jira install'"
-rescue InstallationException
-  puts "Please run #{Jira::Format.summary('jira install')} before "\
-       "running this command."
+  puts "JIRA failed connect (unauthorized), you may need to check your password, or rerun 'jira install'"
+rescue InstallationException => x
+
+  puts <<-XXX
+    #{x.class}
+    #{x.message}
+    #{x.backtrace.join("\n")}
+
+    Please run #{Jira::Format.summary('jira install')} before running this command.
+  XXX
+
 rescue Interrupt
 end

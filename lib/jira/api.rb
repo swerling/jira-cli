@@ -61,15 +61,7 @@ module Jira
     end
 
     def headers
-      { 'Content-Type' => 'application/json' }.merge(cookies)
-    end
-
-    def cookies
-      cookie = Jira::Core.cookie
-      unless cookie.empty?
-        return { 'cookie' => "#{cookie[:name]}=#{cookie[:value]}" }
-      end
-      {}
+      { 'Content-Type' => 'application/json' }
     end
 
   end
