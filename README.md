@@ -2,6 +2,11 @@
 
 Control JIRA from your terminal
 
+Note: this is a fork of https://github.com/ruby-jira/jira-cli, that:
+* removes cookie-based auth
+* restricts permissions on jira-cli config file and it's parent dir
+* fixes the 'jira-new' command (PR pending on original repo: PR #44)
+
 * * *
 
 [![Circle CI](https://circleci.com/gh/ruby-jira/jira-cli.svg?style=svg)](https://circleci.com/gh/ruby-jira/jira-cli)
