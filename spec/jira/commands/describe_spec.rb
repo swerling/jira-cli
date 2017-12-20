@@ -2,7 +2,7 @@ require 'spec_helper'
 
 describe Jira::Command::Describe do
   let(:ticket) { 'TA-1000' }
-  let(:command) { described_class.new(ticket) }
+  let(:command) { described_class.new(ticket, {'summary_limit' => 50, 'description_limit' => 100}) }
   let(:api) { double('api', get: json) }
 
   before do
@@ -28,13 +28,15 @@ describe Jira::Command::Describe do
             'status' => {
               'name' => status
             },
-            'summary' => summary
+            'summary' => summary,
+            'description' => description
           }
         }
       }
       let(:assignee) { 'assignee' }
       let(:status) { 'status' }
       let(:summary) { 'summary' }
+      let(:description) { 'description' }
 
       context 'assignee' do
         it 'outputs assignee' do
